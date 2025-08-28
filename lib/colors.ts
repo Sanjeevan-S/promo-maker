@@ -1,45 +1,42 @@
 import tinycolor from "tinycolor2"
 
-export function getContrastColor(
-  backgroundColor: string,
-  sampleArea?: { x: number; y: number; width: number; height: number },
-  canvas?: HTMLCanvasElement,
-): string {
-  let bgColor = backgroundColor
+export const PRIMARY_COLOR = '#F14A52';
 
-  // If we have canvas and sample area, get average color from that region
-  if (canvas && sampleArea) {
-    const ctx = canvas.getContext("2d")
-    if (ctx) {
-      try {
-        const imageData = ctx.getImageData(sampleArea.x, sampleArea.y, sampleArea.width, sampleArea.height)
-        const data = imageData.data
-        let r = 0,
-          g = 0,
-          b = 0
-        const pixelCount = data.length / 4
+export const PRIMARY_COLOR_VARIANTS = {
+  base: PRIMARY_COLOR,
+  hover: 'rgba(241, 74, 82, 0.05)',  // 5% opacity for hover states
+  outline: 'rgba(241, 74, 82, 0.2)', // 20% opacity for outlines
+  disabled: 'rgba(241, 74, 82, 0.4)', // 40% opacity for disabled states
+  accent: 'rgba(241, 74, 82, 0.1)',   // 10% opacity for subtle accents
+};
 
-        for (let i = 0; i < data.length; i += 4) {
-          r += data[i]
-          g += data[i + 1]
-          b += data[i + 2]
-        }
+export function getPrimaryColorVariant(variant: keyof typeof PRIMARY_COLOR_VARIANTS = 'base'): string {
+  return PRIMARY_COLOR_VARIANTS[variant];
+}
 
-        r = Math.round(r / pixelCount)
-        g = Math.round(g / pixelCount)
-        b = Math.round(b / pixelCount)
+export function createColorVariants(color: string): Record<string, string> {
+  return {
+    base: color,
+    hover: adjustColorOpacity(color, 0.05),
+    outline: adjustColorOpacity(color, 0.2),
+    disabled: adjustColorOpacity(color, 0.4),
+    accent: adjustColorOpacity(color, 0.1),
+  };
+}
 
-        bgColor = `rgb(${r}, ${g}, ${b})`
-      } catch (e) {
-        // Fallback to provided background color
-      }
-    }
-  }
+export function adjustColorOpacity(color: string, opacity: number): string {
+  // Convert hex to rgba
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
 
-  const color = tinycolor(bgColor)
-  const contrast = tinycolor.readability(color, "#ffffff")
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
 
-  return contrast > 4.5 ? "#ffffff" : "#000000"
+export function getContrastColor(backgroundColor: string): string {
+  const color = tinycolor(backgroundColor);
+  return color.isDark() ? '#FFFFFF' : '#000000';
 }
 
 export function addStrokeIfNeeded(

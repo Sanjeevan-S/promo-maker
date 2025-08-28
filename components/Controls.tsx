@@ -56,24 +56,24 @@ export function Controls({
   }
 
   return (
-    <Card className="p-6 space-y-6">
+    <Card className="p-6 space-y-6 border-primary/20">
       {/* Theme Color */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Theme Color</label>
+        <label className="text-sm font-bold tracking-tight mb-2 block text-primary">Theme Color</label>
         <div className="flex gap-2">
           <div className="relative">
             <div
-              className="w-10 h-10 rounded-lg border-2 border-muted cursor-pointer"
+              className="w-10 h-10 rounded-lg border-2 border-primary/20 cursor-pointer hover:border-primary/30 transition-colors"
               style={{ backgroundColor: themeColor }}
               onClick={() => setShowColorPicker(!showColorPicker)}
             />
             {showColorPicker && (
-              <div className="absolute top-12 left-0 z-10 bg-background border rounded-lg p-3 shadow-lg">
+              <div className="absolute top-12 left-0 z-10 bg-background border border-primary/20 rounded-lg p-3 shadow-modern-primary">
                 <HexColorPicker color={themeColor} onChange={onThemeColorChange} />
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full mt-2 bg-transparent"
+                  className="w-full mt-2 bg-transparent border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/30"
                   onClick={() => setShowColorPicker(false)}
                 >
                   Done
@@ -85,41 +85,41 @@ export function Controls({
             value={themeColor}
             onChange={(e) => handleHexInput(e.target.value)}
             placeholder="#000000"
-            className="flex-1"
+            className="flex-1 border-primary/20 focus:ring-primary/20"
           />
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-primary/20" />
 
       {/* Description */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Description</label>
+        <label className="text-sm font-bold tracking-tight mb-2 block text-primary">Description</label>
         <Textarea
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="Describe your product or promotion..."
           maxLength={200}
-          className="resize-none"
+          className="resize-none border-primary/20 focus:ring-primary/20"
         />
-        <p className="text-xs text-muted-foreground mt-1">{description.length}/200 characters</p>
+        <p className="text-xs text-primary/60 mt-1">{description.length}/200 characters</p>
       </div>
 
-      <Separator />
+      <Separator className="bg-primary/20" />
 
       {/* Template Style */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Template Style</label>
+        <label className="text-sm font-bold tracking-tight mb-2 block text-primary">Template Style</label>
         <Select value={selectedTemplate} onValueChange={onTemplateChange}>
-          <SelectTrigger>
+          <SelectTrigger className="border-primary/20 focus:ring-primary/20">
             <SelectValue placeholder="Select a template" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="border-primary/20">
             {templates.map((template) => (
-              <SelectItem key={template.id} value={template.id}>
+              <SelectItem key={template.id} value={template.id} className="focus:bg-primary/5">
                 <div>
-                  <div className="font-medium">{template.label}</div>
-                  <div className="text-xs text-muted-foreground capitalize">{template.tone} tone</div>
+                  <div className="font-bold">{template.label}</div>
+                  <div className="text-xs text-primary/60 capitalize">{template.tone} tone</div>
                 </div>
               </SelectItem>
             ))}
@@ -127,11 +127,11 @@ export function Controls({
         </Select>
       </div>
 
-      <Separator />
+      <Separator className="bg-primary/20" />
 
       {/* Aspect Ratios */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Aspect Ratios</label>
+        <label className="text-sm font-bold tracking-tight mb-2 block text-primary">Aspect Ratios</label>
         <div className="space-y-2">
           {(["1:1", "4:5", "9:16"] as AspectRatio[]).map((ratio) => (
             <div key={ratio} className="flex items-center space-x-2">
@@ -139,8 +139,9 @@ export function Controls({
                 id={ratio}
                 checked={selectedRatios.includes(ratio)}
                 onCheckedChange={(checked) => handleRatioChange(ratio, checked as boolean)}
+                className="border-primary/20 text-primary focus:ring-primary/20"
               />
-              <label htmlFor={ratio} className="text-sm">
+              <label htmlFor={ratio} className="text-sm text-primary">
                 {ratio} {ratio === "1:1" ? "(Square)" : ratio === "4:5" ? "(Portrait)" : "(Story)"}
               </label>
             </div>
@@ -148,10 +149,15 @@ export function Controls({
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-primary/20" />
 
       {/* Generate Button */}
-      <Button onClick={onGenerate} disabled={!canGenerate || isGenerating} className="w-full" size="lg">
+      <Button 
+        onClick={onGenerate} 
+        disabled={!canGenerate || isGenerating} 
+        className="w-full border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 focus:ring-primary/20 disabled:opacity-40"
+        size="lg"
+      >
         {isGenerating ? "Generating..." : "Generate Promos"}
       </Button>
     </Card>
