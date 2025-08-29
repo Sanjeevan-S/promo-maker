@@ -11,16 +11,20 @@ import { Separator } from "@/components/ui/separator"
 import { HexColorPicker } from "react-colorful"
 import { templates } from "@/lib/templates"
 import type { AspectRatio } from "@/lib/compose"
+import type { ColorInfo } from "@/lib/colors"
 
 interface ControlsProps {
   themeColor: string
   description: string
   selectedTemplate: string
   selectedRatios: AspectRatio[]
+  extractedColors: ColorInfo[] // New prop for extracted colors
+  selectedPaletteColor: string | null // New prop for selected color from palette
   onThemeColorChange: (color: string) => void
   onDescriptionChange: (description: string) => void
   onTemplateChange: (templateId: string) => void
   onRatiosChange: (ratios: AspectRatio[]) => void
+  onPaletteColorSelect: (color: string) => void // New prop for palette color selection
   onGenerate: () => void
   canGenerate: boolean
   isGenerating: boolean
@@ -31,10 +35,13 @@ export function Controls({
   description,
   selectedTemplate,
   selectedRatios,
+  extractedColors,
+  selectedPaletteColor,
   onThemeColorChange,
   onDescriptionChange,
   onTemplateChange,
   onRatiosChange,
+  onPaletteColorSelect,
   onGenerate,
   canGenerate,
   isGenerating,
@@ -88,6 +95,31 @@ export function Controls({
             className="flex-1 border-primary/20 focus:ring-primary/20"
           />
         </div>
+
+        {/* Extracted Logo Colors (now inside Theme Color section) */}
+        {extractedColors.length > 0 && (
+          <div className="mt-4">
+            <h4 className="text-xs font-semibold tracking-tight text-primary/80 mb-2">From Logo:</h4>
+            <div className="flex flex-wrap gap-2">
+              {extractedColors.map((color) => (
+                <button
+                  key={color.hex}
+                  onClick={() => onPaletteColorSelect(color.hex)}
+                  className={`w-8 h-8 rounded-full border-2 ${
+                    selectedPaletteColor === color.hex 
+                      ? 'border-primary ring-2 ring-primary/20' 
+                      : 'border-primary/20'
+                  } hover:border-primary/30 transition-colors`}
+                  style={{
+                    backgroundColor: color.hex,
+                    boxShadow: '0 0 4px rgba(0,0,0,0.1)'
+                  }}
+                  title={`${color.hex} (${color.count} pixels)`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <Separator className="bg-primary/20" />

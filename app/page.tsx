@@ -9,17 +9,20 @@ import { Controls } from "@/components/Controls"
 import { PreviewTabs } from "@/components/PreviewTabs"
 import { templates } from "@/lib/templates"
 import type { AspectRatio, CompositionData } from "@/lib/compose"
+import type { ColorInfo } from "@/lib/color"
 
 export default function PromoMaker() {
   const { toast } = useToast()
 
   // State
   const [photos, setPhotos] = useState<string[]>([])
-  const [logo, setLogo] = useState<string>()
-  const [themeColor, setThemeColor] = useState("#3b82f6")
+  const [logo, setLogo] = useState<string | null>(null)
+  const [themeColor, setThemeColor] = useState("#F14A52") // Default primary color
   const [description, setDescription] = useState("")
   const [selectedTemplate, setSelectedTemplate] = useState(templates[0].id)
   const [selectedRatios, setSelectedRatios] = useState<AspectRatio[]>(["1:1", "4:5", "9:16"])
+  const [extractedColors, setExtractedColors] = useState<ColorInfo[]>([]) // New state for extracted colors
+  const [selectedPaletteColor, setSelectedPaletteColor] = useState<string | null>(null) // New state for selected color from palette
   const [compositions, setCompositions] = useState<Record<AspectRatio, CompositionData | null>>({
     "1:1": null,
     "4:5": null,
@@ -39,6 +42,22 @@ export default function PromoMaker() {
     },
     [toast],
   )
+
+  const handleLogoColorExtraction = useCallback((colors: ColorInfo[]) => {
+    setExtractedColors(colors);
+    if (colors.length > 0) {
+      setSelectedPaletteColor(colors[0].hex);
+      setThemeColor(colors[0].hex); // Also set themeColor when logo colors are extracted
+    } else {
+      setSelectedPaletteColor(null);
+      setThemeColor("#F14A52"); // Reset to default if no colors extracted
+    }
+  }, [setExtractedColors, setSelectedPaletteColor, setThemeColor]);
+
+  const handlePaletteColorSelection = useCallback((color: string) => {
+    setSelectedPaletteColor(color);
+    setThemeColor(color); // Update themeColor when a palette color is selected
+  }, [setSelectedPaletteColor, setThemeColor]);
 
   const generateCopy = async () => {
     const template = templates.find((t) => t.id === selectedTemplate)!
@@ -180,6 +199,7 @@ export default function PromoMaker() {
               onPhotosChange={setPhotos}
               onLogoChange={setLogo}
               onError={handleError}
+              onExtractedColorsChange={handleLogoColorExtraction} // Pass the handler for extracted colors
             />
 
             <Controls
@@ -187,10 +207,13 @@ export default function PromoMaker() {
               description={description}
               selectedTemplate={selectedTemplate}
               selectedRatios={selectedRatios}
+              extractedColors={extractedColors} // Pass extracted colors
+              selectedPaletteColor={selectedPaletteColor} // Pass selected palette color
               onThemeColorChange={setThemeColor}
               onDescriptionChange={setDescription}
               onTemplateChange={setSelectedTemplate}
               onRatiosChange={setSelectedRatios}
+              onPaletteColorSelect={handlePaletteColorSelection} // Pass handler for palette color selection
               onGenerate={handleGenerate}
               canGenerate={canGenerate}
               isGenerating={isGenerating}
