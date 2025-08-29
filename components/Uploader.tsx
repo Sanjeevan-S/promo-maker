@@ -72,49 +72,6 @@ export function Uploader({
   // const adjustColorBrightness = (hex: string, percent: number): string => { /* ... */ };
   // const generateColorVariations = (baseColor: string): string[] => { /* ... */ };
 
-  const removeBackground = async (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        if (!ctx) {
-          reject(new Error('Could not create canvas context'));
-          return;
-        }
-
-        canvas.width = img.width;
-        canvas.height = img.height;
-
-        ctx.drawImage(img, 0, 0);
-
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-
-        for (let i = 0; i < data.length; i += 4) {
-          const brightness =
-            (data[i] + data[i + 1] + data[i + 2]) / 3;
-
-          if (brightness > 240 || brightness < 15) {
-            data[i + 3] = 0; // Set alpha to 0 (fully transparent)
-          }
-        }
-
-        ctx.putImageData(imageData, 0, 0);
-
-        const processedDataUrl = canvas.toDataURL('image/png');
-        resolve(processedDataUrl);
-      };
-
-      img.onerror = () => {
-        reject(new Error('Failed to load image'));
-      };
-    });
-  };
-
   const extractColorsFromImage = (imageUrl: string): Promise<ColorInfo[]> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -180,10 +137,10 @@ export function Uploader({
   };
 
   const handleFileUpload = async (uploadedFile: File) => {
-    if (!uploadedFile.type.startsWith('image/')) {
+    if (!uploadedFile.type.startsWith('image/png')) {
       toast({
         title: 'Invalid File Type',
-        description: 'Please upload an image file.',
+        description: 'Please upload a PNG file.',
         variant: 'destructive',
       });
       return;
@@ -213,7 +170,7 @@ export function Uploader({
     setIsLoading(true);
 
     try {
-      const processedDataUrl = await removeBackground(uploadedFile);
+      const processedDataUrl = originalUrl; // No background removal, just use original URL
 
       const newImagePair: ImagePair = {
         id: `image-${Date.now()}`,
@@ -329,13 +286,16 @@ export function Uploader({
       {/* Image Upload Section */}
       <div>
         <label className="block text-sm font-bold tracking-tight text-primary mb-2">
-          Upload Images (Max 3)
+          Upload PNG Images (Max 3) - No Background Removal
         </label>
+        <p className="text-xs text-primary/60 mb-2">
+          For testing: Upload PNG files with transparent backgrounds. No background removal processing.
+        </p>
         <div className="flex items-center gap-2">
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/png"
             onChange={(e) => {
               const uploadedFile = e.target.files?.[0];
               if (uploadedFile) {

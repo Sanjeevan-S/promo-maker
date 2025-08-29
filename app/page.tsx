@@ -8,6 +8,7 @@ import { Uploader } from "@/components/Uploader"
 import { Controls } from "@/components/Controls"
 import { PreviewTabs } from "@/components/PreviewTabs"
 import { templates } from "@/lib/templates"
+import { promptTemplates } from "@/lib/prompt-templates"
 import type { AspectRatio, CompositionData } from "@/lib/compose"
 import type { ColorInfo } from "@/lib/colors"
 
@@ -21,6 +22,7 @@ export default function PromoMaker() {
   const [description, setDescription] = useState("")
   const [selectedTemplate, setSelectedTemplate] = useState(templates[0].id)
   const [selectedRatios, setSelectedRatios] = useState<AspectRatio[]>(["1:1", "4:5", "9:16"])
+  const [selectedPromptStyle, setSelectedPromptStyle] = useState("professional-poster") // New state for prompt style
   const [extractedColors, setExtractedColors] = useState<ColorInfo[]>([]) // New state for extracted colors
   const [selectedPaletteColor, setSelectedPaletteColor] = useState<string | null>(null) // New state for selected color from palette
   const [compositions, setCompositions] = useState<Record<AspectRatio, CompositionData | null>>({
@@ -95,6 +97,7 @@ export default function PromoMaker() {
           themeColor,
           hasLogo: !!logo,
           hasPhotos: photos.length > 0,
+          promptStyle: selectedPromptStyle,
         }),
       })
 
@@ -107,15 +110,45 @@ export default function PromoMaker() {
     }
   }
 
-  const generatePromotionalImage = async (prompt: string, ratio: AspectRatio) => {
+  const generatePromotionalImage = async (prompt: string, ratio: AspectRatio, baseImageUrl: string) => {
     try {
+      // Convert blob URL to base64 data
+      let imageData = baseImageUrl
+      
+      if (baseImageUrl.startsWith('blob:')) {
+        // Fetch the blob and convert to base64
+        const response = await fetch(baseImageUrl)
+        const blob = await response.blob()
+        
+        // Convert blob to base64
+        const reader = new FileReader()
+        imageData = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(blob)
+        })
+      }
+
       const response = await fetch("/api/image-generation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ 
+          prompt, 
+          aspectRatio: ratio, 
+          userImage: imageData,
+          promptStyle: selectedPromptStyle,
+          themeColor,
+          userDescription: description,
+          hasLogo: !!logo,
+          hasPhotos: photos.length > 0
+        }),
       })
 
-      if (!response.ok) throw new Error("Failed to generate promotional image")
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        throw new Error(errorMessage)
+      }
 
       const data = await response.json()
       
@@ -127,6 +160,9 @@ export default function PromoMaker() {
       return data.imageUrl
     } catch (error) {
       console.error("Error generating promotional image:", error)
+      if (error instanceof Error) {
+        throw error
+      }
       throw new Error("Failed to generate promotional image")
     }
   }
@@ -164,6 +200,7 @@ export default function PromoMaker() {
     try {
       // Generate copy once
       const copy = await generateCopy()
+      console.log("Generated copy:", copy)
       const template = templates.find((t) => t.id === selectedTemplate)!
 
       // Generate backgrounds and compositions for each ratio
@@ -177,8 +214,14 @@ export default function PromoMaker() {
         // Generate comprehensive prompt for this ratio
         const prompt = await generatePrompt(ratio)
         
-        // Generate promotional image using the prompt
-        const promotionalImage = await generatePromotionalImage(prompt, ratio)
+        // Use the first uploaded photo as the base image for editing
+        const baseImage = photos[0]
+        if (!baseImage) {
+          throw new Error("No photos uploaded for editing")
+        }
+        
+        // Generate promotional image by editing the user's image
+        const promotionalImage = await generatePromotionalImage(prompt, ratio, baseImage)
         
         console.log(`Generated image for ${ratio}:`, promotionalImage?.substring(0, 100) + '...')
         
@@ -189,7 +232,7 @@ export default function PromoMaker() {
         }
 
         newCompositions[ratio] = {
-          background: promotionalImage, // Use the generated promotional image as background
+          background: promotionalImage, // Use the edited promotional image as background
           photos,
           logo: logo || undefined, // Convert null to undefined to match the expected type
           themeColor,
@@ -200,12 +243,12 @@ export default function PromoMaker() {
 
       setCompositions(newCompositions)
 
-      toast({
-        title: "Success",
-        description: "Promo images generated successfully!",
-      })
+              toast({
+          title: "Success",
+          description: "Promo images edited successfully!",
+        })
     } catch (error) {
-      handleError("Failed to generate promo images")
+      handleError("Failed to edit promo images")
     } finally {
       setIsGenerating(false)
     }
@@ -218,8 +261,14 @@ export default function PromoMaker() {
       // Generate a new comprehensive prompt for this ratio
       const prompt = await generatePrompt(ratio)
       
-              // Generate new promotional image using the prompt
-        const promotionalImage = await generatePromotionalImage(prompt, ratio)
+              // Use the first uploaded photo as the base image for editing
+        const baseImage = photos[0]
+        if (!baseImage) {
+          throw new Error("No photos uploaded for editing")
+        }
+        
+        // Generate new promotional image by editing the user's image
+        const promotionalImage = await generatePromotionalImage(prompt, ratio, baseImage)
         
         console.log(`Rerolled image for ${ratio}:`, promotionalImage?.substring(0, 100) + '...')
         
@@ -234,10 +283,10 @@ export default function PromoMaker() {
           [ratio]: prev[ratio] ? { ...prev[ratio]!, background: promotionalImage } : null,
         }))
 
-      toast({
-        title: "Background updated",
-        description: `New background generated for ${ratio} format`,
-      })
+              toast({
+          title: "Image updated",
+          description: `New text overlay generated for ${ratio} format`,
+        })
     } catch (error) {
       handleError("Failed to generate new background")
     }
@@ -251,7 +300,7 @@ export default function PromoMaker() {
           <div>
             <h1 className="text-2xl font-bold">Promo Maker</h1>
             <p className="text-sm text-muted-foreground">
-              Create stunning promotional images with AI-powered backgrounds and copy
+              Create stunning promotional images by editing your photos with AI-powered text overlays
             </p>
           </div>
           <Button variant="outline" size="sm">
@@ -280,12 +329,14 @@ export default function PromoMaker() {
               description={description}
               selectedTemplate={selectedTemplate}
               selectedRatios={selectedRatios}
+              selectedPromptStyle={selectedPromptStyle}
               extractedColors={extractedColors} // Pass extracted colors
               selectedPaletteColor={selectedPaletteColor} // Pass selected palette color
               onThemeColorChange={setThemeColor}
               onDescriptionChange={setDescription}
               onTemplateChange={setSelectedTemplate}
               onRatiosChange={setSelectedRatios}
+              onPromptStyleChange={setSelectedPromptStyle}
               onPaletteColorSelect={handlePaletteColorSelection} // Pass handler for palette color selection
               onGenerate={handleGenerate}
               canGenerate={canGenerate}

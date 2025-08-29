@@ -163,7 +163,7 @@ export function PreviewTabs({ ratios, compositions, isGenerating, onRerollBackgr
             disabled={!compositions[activeTab] || isGenerating}
           >
             <RefreshCw className="w-4 h-4 mr-2" />
-            Re-roll Background
+            Re-roll Text
           </Button>
           <Button variant="outline" size="sm" onClick={downloadAllZIP} disabled={!hasAnyComposition}>
             <Archive className="w-4 h-4 mr-2" />

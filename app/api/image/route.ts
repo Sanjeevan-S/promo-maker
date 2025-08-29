@@ -28,12 +28,12 @@ export async function POST(request: Request) {
     }
 
     // Construct the DALL-E prompt
-    const prompt = `Generate a promotional image background for a product. \n
+    const prompt = `Generate a promotional image BACKGROUND for a product. \n
 Style: ${template.imagePrompt}.\n
 Main Color: ${themeColor}.\n
 Aspect Ratio: ${ratio}.\n
 Tone: ${template.tone}.\n
-Consider the text will be placed in the ${textZone} area of the image, so keep that area relatively clear or complementary to text. The overall aesthetic should be modern, clean, and visually appealing.`
+CRITICAL: This must be ONLY a background - not a complete design. Leave clear space in the center/middle area for overlaying a product image. Include catchy, punchy text that corresponds to the description. NO gradients - use solid colors, textures, or patterns. Keep the design simple, minimal, and clean. The text should be readable and stand out against the background. Consider the text will be placed in the ${textZone} area, so keep that area relatively clear or complementary to text.`
 
     // Generate image using DALL-E
     const response = await openai.images.generate({

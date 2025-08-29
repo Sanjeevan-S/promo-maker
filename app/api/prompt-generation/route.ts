@@ -20,30 +20,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const systemPrompt = `You are a professional marketing copywriter and visual designer. Your task is to create a detailed, specific prompt for an AI image generation tool (DALL-E 3) that will create a promotional image.
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("OpenAI API key is not configured")
+      return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 })
+    }
 
-The prompt should:
-1. Incorporate the user's description and business context
-2. Follow the specified template style and design aesthetic
-3. Be optimized for the given aspect ratio
-4. Include the theme color in the design
-5. Account for whether there will be a logo and photos overlaid
-6. Create a cohesive, professional promotional image
-7. Be specific enough for consistent AI generation
-8. Focus on the background and overall composition
+    const systemPrompt = `You are an expert at creating concise, effective prompts for DALL-E 2 to transform images into professional promotional posters.
 
-Return only the image generation prompt, nothing else.`
+CRITICAL RULES:
+- Create prompts that will transform existing images into professional posters
+- Focus on creating cohesive, visually stunning promotional designs
+- Use specific design terminology that DALL-E 2 understands
+- Emphasize high-quality, poster-worthy results
+- Keep prompts concise and under 500 characters
+- Make the image look like it was professionally designed, not just edited
 
-    const userPrompt = `Create a promotional image prompt with these specifications:
+Return only the image transformation prompt, no explanations.`
+
+    const userPrompt = `Create a concise prompt to transform this image into a professional promotional poster.
 
 User Description: ${userDescription}
 Template Style: ${templateStyle}
 Aspect Ratio: ${aspectRatio}
 Theme Color: ${themeColor}
-Logo Present: ${hasLogo ? 'Yes' : 'No'}
-Photos Present: ${hasPhotos ? 'Yes' : 'No'}
 
-Generate a detailed, specific prompt for DALL-E 3 that will create a professional promotional image incorporating all these elements.`
+REQUIREMENTS:
+- Integrate user description: "${userDescription}"
+- Apply professional design aesthetic
+- Use ${themeColor} as primary accent color
+- Create professional poster for ${aspectRatio} format
+- Ensure result looks like premium marketing poster
+- Make text appear professionally integrated, not overlaid
+- Keep prompt concise and under 500 characters
+
+Generate a concise, specific prompt that will create an exceptional poster-quality result.`
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
@@ -61,9 +71,22 @@ Generate a detailed, specific prompt for DALL-E 3 that will create a professiona
       throw new Error("Failed to generate prompt")
     }
 
+    console.log(`Generated prompt for ${aspectRatio}:`, generatedPrompt.substring(0, 100) + '...')
+
     return NextResponse.json({ prompt: generatedPrompt })
   } catch (error) {
     console.error("Error generating prompt:", error)
-    return NextResponse.json({ error: "Failed to generate prompt" }, { status: 500 })
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes("API key")) {
+        return NextResponse.json({ error: "Invalid or missing OpenAI API key" }, { status: 401 })
+      }
+      if (error.message.includes("rate limit")) {
+        return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 })
+      }
+    }
+    
+    return NextResponse.json({ error: "Failed to generate prompt. Please check your OpenAI API key and try again." }, { status: 500 })
   }
 }

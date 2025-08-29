@@ -1,0 +1,232 @@
+/* Promo Composition Styles */
+
+/* Background container with vignette effect */
+.promo-background {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Vignette overlay to emphasize center */
+.promo-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(
+    transparent 60%, 
+    rgba(0, 0, 0, 0.22)
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Photo container in center safe area */
+.promo-photo-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68%;
+  height: 68%;
+}
+
+/* Individual photo styling */
+.promo-photo {
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.35));
+  transition: transform 0.3s ease;
+}
+
+.promo-photo:hover {
+  transform: scale(1.02);
+}
+
+/* Photo with rim lighting effect */
+.promo-photo-with-rim {
+  position: relative;
+}
+
+.promo-photo-with-rim::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  filter: blur(8px) brightness(1.2);
+  mix-blend-mode: screen;
+  opacity: 0.3;
+  z-index: -1;
+}
+
+/* Text overlay container */
+.promo-text-overlay {
+  position: absolute;
+  z-index: 3;
+  padding: 24px;
+  pointer-events: none;
+}
+
+/* Text positioning based on template layout */
+.promo-text-top {
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.promo-text-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.promo-text-left {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.promo-text-right {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+/* Typography styles */
+.promo-headline {
+  font-size: clamp(24px, 4vw, 48px);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.promo-subhead {
+  font-size: clamp(16px, 2.5vw, 24px);
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 16px;
+  opacity: 0.9;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.promo-cta {
+  font-size: clamp(14px, 2vw, 18px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #1a1a1a;
+  border-radius: 8px;
+  display: inline-block;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+/* Logo positioning */
+.promo-logo {
+  position: absolute;
+  z-index: 2;
+  max-width: 120px;
+  max-height: 60px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+}
+
+.promo-logo-top-left {
+  top: 24px;
+  left: 24px;
+}
+
+.promo-logo-top-right {
+  top: 24px;
+  right: 24px;
+}
+
+.promo-logo-bottom-left {
+  bottom: 24px;
+  left: 24px;
+}
+
+.promo-logo-bottom-right {
+  bottom: 24px;
+  right: 24px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .promo-text-overlay {
+    padding: 16px;
+  }
+  
+  .promo-headline {
+    font-size: clamp(20px, 6vw, 32px);
+  }
+  
+  .promo-subhead {
+    font-size: clamp(14px, 4vw, 20px);
+  }
+  
+  .promo-cta {
+    font-size: clamp(12px, 3vw, 16px);
+    padding: 10px 20px;
+  }
+  
+  .promo-logo {
+    max-width: 80px;
+    max-height: 40px;
+  }
+}
+
+/* Animation for photo entrance */
+@keyframes photoEntrance {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.promo-photo-entering {
+  animation: photoEntrance 0.6s ease-out;
+}
+
+/* Loading state for background generation */
+.promo-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e5e5e5 100%);
+  border-radius: 12px;
+  border: 2px dashed #d1d5db;
+}
+
+.promo-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #F14A52;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

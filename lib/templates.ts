@@ -31,10 +31,10 @@ export interface Template {
 export const templates: Template[] = [
   {
     id: "clean-gradient",
-    label: "Clean Gradient",
+    label: "Clean Solid",
     tone: "minimal",
     copyPrompt: "Create clean, minimal copy that emphasizes simplicity and elegance",
-    imagePrompt: "Clean gradient background with subtle geometric patterns",
+    imagePrompt: "Clean solid color background with subtle geometric patterns, minimal design leaving center space clear for product overlay",
     typography: {
       headlineFont: "font-sans",
       subheadFont: "font-sans",
@@ -51,7 +51,7 @@ export const templates: Template[] = [
     label: "Bokeh Studio",
     tone: "friendly",
     copyPrompt: "Create warm, friendly copy that feels approachable and inviting",
-    imagePrompt: "Soft bokeh background with warm studio lighting effects",
+    imagePrompt: "Soft bokeh background with warm studio lighting, simple and minimal design leaving center space clear for product overlay",
     typography: {
       headlineFont: "font-sans",
       subheadFont: "font-sans",
@@ -68,7 +68,7 @@ export const templates: Template[] = [
     label: "Coupon Slash",
     tone: "bold",
     copyPrompt: "Create bold, attention-grabbing copy with strong call-to-action language",
-    imagePrompt: "Dynamic diagonal slash patterns with high contrast colors",
+    imagePrompt: "Dynamic diagonal slash patterns with high contrast solid colors, minimal design leaving center space clear for product overlay",
     typography: {
       headlineFont: "font-sans",
       subheadFont: "font-sans",
@@ -85,7 +85,7 @@ export const templates: Template[] = [
     label: "Collage Grid",
     tone: "friendly",
     copyPrompt: "Create playful, engaging copy that feels creative and fun",
-    imagePrompt: "Geometric grid patterns with soft textures and organic shapes",
+    imagePrompt: "Geometric grid patterns with soft textures and organic shapes, simple design leaving center space clear for product overlay",
     typography: {
       headlineFont: "font-sans",
       subheadFont: "font-sans",
@@ -102,7 +102,7 @@ export const templates: Template[] = [
     label: "Concrete Texture",
     tone: "bold",
     copyPrompt: "Create strong, industrial copy that conveys durability and strength",
-    imagePrompt: "Concrete texture background with industrial elements and shadows",
+    imagePrompt: "Concrete texture background with industrial elements and shadows, minimal design leaving center space clear for product overlay",
     typography: {
       headlineFont: "font-sans",
       subheadFont: "font-sans",
@@ -119,7 +119,7 @@ export const templates: Template[] = [
     label: "Night Neon",
     tone: "festive",
     copyPrompt: "Create exciting, celebratory copy with energy and enthusiasm",
-    imagePrompt: "Dark background with neon lighting effects and vibrant glows",
+    imagePrompt: "Dark background with neon lighting effects and vibrant solid colors, minimal design leaving center space clear for product overlay",
     typography: {
       headlineFont: "font-sans",
       subheadFont: "font-sans",

@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { HexColorPicker } from "react-colorful"
 import { templates } from "@/lib/templates"
+import { promptTemplates } from "@/lib/prompt-templates"
 import type { AspectRatio } from "@/lib/compose"
 import type { ColorInfo } from "@/lib/colors"
 
@@ -18,12 +19,14 @@ interface ControlsProps {
   description: string
   selectedTemplate: string
   selectedRatios: AspectRatio[]
+  selectedPromptStyle: string // New prop for prompt style
   extractedColors: ColorInfo[] // New prop for extracted colors
   selectedPaletteColor: string | null // New prop for selected color from palette
   onThemeColorChange: (color: string) => void
   onDescriptionChange: (description: string) => void
   onTemplateChange: (templateId: string) => void
   onRatiosChange: (ratios: AspectRatio[]) => void
+  onPromptStyleChange: (style: string) => void // New prop for prompt style change
   onPaletteColorSelect: (color: string) => void // New prop for palette color selection
   onGenerate: () => void
   canGenerate: boolean
@@ -35,12 +38,14 @@ export function Controls({
   description,
   selectedTemplate,
   selectedRatios,
+  selectedPromptStyle,
   extractedColors,
   selectedPaletteColor,
   onThemeColorChange,
   onDescriptionChange,
   onTemplateChange,
   onRatiosChange,
+  onPromptStyleChange,
   onPaletteColorSelect,
   onGenerate,
   canGenerate,
@@ -161,6 +166,28 @@ export function Controls({
 
       <Separator className="bg-primary/20" />
 
+      {/* Prompt Style */}
+      <div>
+        <label className="text-sm font-bold tracking-tight mb-2 block text-primary">Design Style</label>
+        <Select value={selectedPromptStyle} onValueChange={onPromptStyleChange}>
+          <SelectTrigger className="border-primary/20 focus:ring-primary/20">
+            <SelectValue placeholder="Select a design style" />
+          </SelectTrigger>
+          <SelectContent className="border-primary/20">
+            {promptTemplates.map((template) => (
+              <SelectItem key={template.id} value={template.id} className="focus:bg-primary/5">
+                <div>
+                  <div className="font-bold">{template.name}</div>
+                  <div className="text-xs text-primary/60">{template.description}</div>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Separator className="bg-primary/20" />
+
       {/* Aspect Ratios */}
       <div>
         <label className="text-sm font-bold tracking-tight mb-2 block text-primary">Aspect Ratios</label>
@@ -190,7 +217,7 @@ export function Controls({
         className="w-full border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 focus:ring-primary/20 disabled:opacity-40"
         size="lg"
       >
-        {isGenerating ? "Generating..." : "Generate Promos"}
+        {isGenerating ? "Editing..." : "Edit Images with Text"}
       </Button>
     </Card>
   )

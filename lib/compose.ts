@@ -318,7 +318,7 @@ async function drawPhoto(
       try {
         ctx.save()
 
-        // Create clipping path
+        // Create clipping path for rounded corners
         ctx.beginPath()
         drawRoundedRect(ctx, x, y, width, height, radius)
         ctx.clip()
@@ -342,7 +342,12 @@ async function drawPhoto(
           offsetY = (height - drawHeight) / 2
         }
 
-        ctx.drawImage(img, x + offsetX, y + offsetY, drawWidth, drawHeight)
+        // Ensure we're drawing within the clipped area
+        const drawX = x + offsetX
+        const drawY = y + offsetY
+
+        // Draw the image with transparency support
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
 
         ctx.restore()
         resolve()
@@ -355,6 +360,7 @@ async function drawPhoto(
       reject(new Error("Failed to load photo"))
     }
     
+    // Set crossOrigin to anonymous to handle CORS
     img.crossOrigin = "anonymous"
     img.src = photoUrl
   })
