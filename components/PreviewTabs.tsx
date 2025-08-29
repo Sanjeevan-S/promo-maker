@@ -8,6 +8,8 @@ import { Download, RefreshCw, Archive } from "lucide-react"
 import { type AspectRatio, type CompositionData, composeToCanvas } from "@/lib/compose"
 import JSZip from "jszip"
 import saveAs from "file-saver"
+import { Player } from "@lottiefiles/react-lottie-player"
+import animationData from "@/src/theme/gradient loader 01.json"
 
 interface PreviewTabsProps {
   ratios: AspectRatio[]
@@ -23,7 +25,17 @@ export function PreviewTabs({ ratios, compositions, isGenerating, onRerollBackgr
     "9:16": null,
   })
   const [activeTab, setActiveTab] = useState<AspectRatio>(ratios[0] || "1:1")
-  const [rendering, setRendering] = useState<Record<AspectRatio, boolean>>({})
+  const [rendering, setRendering] = useState<Record<AspectRatio, boolean>>(() => {
+    const initialRenderingState: Record<AspectRatio, boolean> = {
+      "1:1": false,
+      "4:5": false,
+      "9:16": false,
+    }
+    ratios.forEach(ratio => {
+      initialRenderingState[ratio] = false
+    })
+    return initialRenderingState
+  })
 
   useEffect(() => {
     // Render compositions when they change
@@ -32,7 +44,10 @@ export function PreviewTabs({ ratios, compositions, isGenerating, onRerollBackgr
       const canvas = canvasRefs.current[ratio]
 
       if (composition && canvas) {
-        setRendering((prev) => ({ ...prev, [ratio]: true }))
+        setRendering((prev) => ({
+          ...prev,
+          [ratio]: true,
+        }))
         try {
           await composeToCanvas(canvas, ratio, composition)
         } catch (error) {
@@ -129,13 +144,20 @@ export function PreviewTabs({ ratios, compositions, isGenerating, onRerollBackgr
                       }}
                     >
                       <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                        <Player
+                          autoplay
+                          loop
+                          src={animationData}
+                          style={{ height: '100px', width: '100px' }}
+                        ></Player>
                         <p className="text-sm text-muted-foreground">Generating...</p>
                       </div>
                     </div>
                   ) : (
                     <canvas
-                      ref={(el) => (canvasRefs.current[ratio] = el)}
+                      ref={(el) => {
+                        canvasRefs.current[ratio] = el
+                      }}
                       className="border rounded-lg shadow-sm max-w-full h-auto"
                       style={{
                         maxWidth: "400px",

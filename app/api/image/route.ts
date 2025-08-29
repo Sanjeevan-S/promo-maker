@@ -1,84 +1,63 @@
-import { NextResponse } from 'next/server';
-import { removeBackground } from '@imgly/background-removal';
+import { NextResponse } from 'next/server'
+import OpenAI from 'openai'
+import { templates } from "@/lib/templates"
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
 export async function POST(request: Request) {
   try {
-    // Validate request content type
-    const contentType = request.headers.get('content-type');
-    if (!contentType || !contentType.includes('multipart/form-data')) {
+    const { templateId, themeColor, ratio, textZone, seed } = await request.json()
+
+    if (!templateId || !themeColor || !ratio || !textZone) {
       return NextResponse.json(
-        { error: 'Invalid request content type' },
+        { error: 'Missing required parameters' },
         { status: 400 }
-      );
+      )
     }
 
-    // Parse the form data
-    const formData = await request.formData();
-    const file = formData.get('file') as File | null;
+    const template = templates.find((t) => t.id === templateId)
 
-    if (!file) {
+    if (!template) {
       return NextResponse.json(
-        { error: 'No file uploaded' },
-        { status: 400 }
-      );
+        { error: 'Template not found' },
+        { status: 404 }
+      )
     }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json(
-        { error: 'Invalid file type. Please upload an image.' },
-        { status: 400 }
-      );
-    }
+    // Construct the DALL-E prompt
+    const prompt = `Generate a promotional image background for a product. \n
+Style: ${template.imagePrompt}.\n
+Main Color: ${themeColor}.\n
+Aspect Ratio: ${ratio}.\n
+Tone: ${template.tone}.\n
+Consider the text will be placed in the ${textZone} area of the image, so keep that area relatively clear or complementary to text. The overall aesthetic should be modern, clean, and visually appealing.`
 
-    // Convert file to ArrayBuffer
-    const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
+    // Generate image using DALL-E
+    const response = await openai.images.generate({
+      model: "dall-e-3", // or "dall-e-2" if preferred
+      prompt: prompt,
+      n: 1,
+      size: "1024x1024", // DALL-E 3 supports 1024x1024, 1024x1792, 1792x1024
+      response_format: "b64_json",
+      // seed: seed, // DALL-E 3 does not support seed directly through this API
+    })
 
-    // Remove background
-    let processedBlob;
-    try {
-      processedBlob = await removeBackground(uint8Array);
-    } catch (bgRemovalError) {
-      console.error('Background removal specific error:', bgRemovalError);
-      return NextResponse.json(
-        { 
-          error: 'Failed to remove background', 
-          details: bgRemovalError instanceof Error ? bgRemovalError.message : 'Unknown error' 
-        },
-        { status: 500 }
-      );
-    }
+    const base64Image = response.data[0].b64_json
 
-    // Convert processed image to buffer
-    const buffer = Buffer.from(await processedBlob.arrayBuffer());
-
-    // Return the processed image
-    return new NextResponse(buffer, {
-      headers: {
-        'Content-Type': 'image/png',
-        'Content-Disposition': `attachment; filename="processed-${file.name.replace(/\.[^/.]+$/, '')}.png"`,
-      },
-    });
+    return NextResponse.json({ backgroundDataUrl: `data:image/png;base64,${base64Image}` })
   } catch (error) {
-    // Comprehensive error logging
-    console.error('Complete background removal error:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace',
-      type: typeof error,
-      stringified: JSON.stringify(error, Object.getOwnPropertyNames(error))
-    });
-
+    console.error('DALL-E image generation error:', error)
     return NextResponse.json(
-      { 
-        error: 'Failed to process image', 
+      {
+        error: 'Failed to generate image',
         details: error instanceof Error ? error.message : 'Unknown error',
-        type: typeof error
       },
       { status: 500 }
-    );
+    )
   }
 }
 
-// Ensure this is a dynamic route for API handling
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic' // Ensure this is a dynamic route for API handling

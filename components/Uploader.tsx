@@ -39,6 +39,8 @@ export function Uploader({
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [imageFileName, setImageFileName] = useState<string | null>(null); // New state for image file name
   const [logoFileName, setLogoFileName] = useState<string | null>(null);   // New state for logo file name
+  // Removed: const [aiPrompt, setAiPrompt] = useState<string>(''); // New state for AI image generation prompt
+  // Removed: const [isGeneratingAIImage, setIsGeneratingAIImage] = useState(false); // New state for AI image generation loading
 
   // Utility color conversion functions
   const rgbToHex = (r: number, g: number, b: number): string => {
@@ -219,7 +221,11 @@ export function Uploader({
         processed: processedDataUrl
       };
 
-      setImages(prevImages => [...prevImages, newImagePair]);
+      setImages(prevImages => {
+        const updatedImages = [...prevImages, newImagePair];
+        onPhotosChange(updatedImages.map(img => img.processed!).filter(Boolean) as string[]);
+        return updatedImages;
+      });
       setImageFileName(uploadedFile.name); // Set image file name
 
       toast({
@@ -300,9 +306,11 @@ export function Uploader({
   };
 
   const removeImage = (idToRemove: string) => {
-    setImages(prevImages => 
-      prevImages.filter(image => image.id !== idToRemove)
-    );
+    setImages(prevImages => {
+      const updatedImages = prevImages.filter(image => image.id !== idToRemove);
+      onPhotosChange(updatedImages.map(img => img.processed!).filter(Boolean) as string[]);
+      return updatedImages;
+    });
     if (images.length === 1 && images[0].id === idToRemove) {
       setImageFileName(null); // Clear image file name if last image is removed
     }
@@ -313,6 +321,8 @@ export function Uploader({
     onExtractedColorsChange([]); // Clear extracted colors via prop
     setLogoFileName(null); // Clear logo file name
   };
+
+  // Removed: const handleGenerateAIImage = async () => { ... }
 
   return (
     <div className="space-y-4 p-4 border rounded-lg border-primary/20 shadow-modern-primary">
@@ -389,6 +399,8 @@ export function Uploader({
           ))}
         </div>
       )}
+
+      {/* Removed: AI Image Generation Section */}
 
       {/* Logo Upload Section */}
       <div className="mt-4">

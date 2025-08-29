@@ -1,5 +1,12 @@
 import tinycolor from "tinycolor2"
 
+export interface ColorInfo {
+  hex: string;
+  rgb: { r: number; g: number; b: number };
+  hsl: { h: number; s: number; l: number };
+  count: number;
+}
+
 export const PRIMARY_COLOR = '#F14A52';
 
 export const PRIMARY_COLOR_VARIANTS = {

@@ -9,7 +9,7 @@ import { Controls } from "@/components/Controls"
 import { PreviewTabs } from "@/components/PreviewTabs"
 import { templates } from "@/lib/templates"
 import type { AspectRatio, CompositionData } from "@/lib/compose"
-import type { ColorInfo } from "@/lib/color"
+import type { ColorInfo } from "@/lib/colors"
 
 export default function PromoMaker() {
   const { toast } = useToast()
@@ -81,6 +81,49 @@ export default function PromoMaker() {
     }
   }
 
+  const generatePrompt = async (ratio: AspectRatio) => {
+    const template = templates.find((t) => t.id === selectedTemplate)!
+
+    try {
+      const response = await fetch("/api/prompt-generation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userDescription: description,
+          templateStyle: template.label,
+          aspectRatio: ratio,
+          themeColor,
+          hasLogo: !!logo,
+          hasPhotos: photos.length > 0,
+        }),
+      })
+
+      if (!response.ok) throw new Error("Failed to generate prompt")
+
+      const data = await response.json()
+      return data.prompt
+    } catch (error) {
+      throw new Error("Failed to generate prompt")
+    }
+  }
+
+  const generatePromotionalImage = async (prompt: string, ratio: AspectRatio) => {
+    try {
+      const response = await fetch("/api/image-generation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      })
+
+      if (!response.ok) throw new Error("Failed to generate promotional image")
+
+      const data = await response.json()
+      return data.imageUrl
+    } catch (error) {
+      throw new Error("Failed to generate promotional image")
+    }
+  }
+
   const generateBackground = async (ratio: AspectRatio, seed?: number) => {
     const template = templates.find((t) => t.id === selectedTemplate)!
 
@@ -124,12 +167,16 @@ export default function PromoMaker() {
       }
 
       for (const ratio of selectedRatios) {
-        const background = await generateBackground(ratio)
+        // Generate comprehensive prompt for this ratio
+        const prompt = await generatePrompt(ratio)
+        
+        // Generate promotional image using the prompt
+        const promotionalImage = await generatePromotionalImage(prompt, ratio)
 
         newCompositions[ratio] = {
-          background,
+          background: promotionalImage, // Use the generated promotional image as background
           photos,
-          logo,
+          logo: logo || undefined, // Convert null to undefined to match the expected type
           themeColor,
           copy,
           template,
@@ -153,12 +200,15 @@ export default function PromoMaker() {
     if (!compositions[ratio]) return
 
     try {
-      const seed = Math.floor(Math.random() * 10000)
-      const background = await generateBackground(ratio, seed)
+      // Generate a new comprehensive prompt for this ratio
+      const prompt = await generatePrompt(ratio)
+      
+      // Generate new promotional image using the prompt
+      const promotionalImage = await generatePromotionalImage(prompt, ratio)
 
       setCompositions((prev) => ({
         ...prev,
-        [ratio]: prev[ratio] ? { ...prev[ratio]!, background } : null,
+        [ratio]: prev[ratio] ? { ...prev[ratio]!, background: promotionalImage } : null,
       }))
 
       toast({

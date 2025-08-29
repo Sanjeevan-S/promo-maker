@@ -91,17 +91,22 @@ async function drawBackground(
 }
 
 function addNoiseOverlay(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-  const imageData = ctx.getImageData(0, 0, width, height)
-  const data = imageData.data
+  try {
+    const imageData = ctx.getImageData(0, 0, width, height)
+    const data = imageData.data
 
-  for (let i = 0; i < data.length; i += 4) {
-    const noise = (Math.random() - 0.5) * 10
-    data[i] = Math.max(0, Math.min(255, data[i] + noise))
-    data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise))
-    data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise))
+    for (let i = 0; i < data.length; i += 4) {
+      const noise = (Math.random() - 0.5) * 10
+      data[i] = Math.max(0, Math.min(255, data[i] + noise))
+      data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise))
+      data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise))
+    }
+
+    ctx.putImageData(imageData, 0, 0)
+  } catch (error) {
+    // Canvas is tainted (cross-origin image), skip noise overlay
+    console.warn("Canvas is tainted, skipping noise overlay:", error)
   }
-
-  ctx.putImageData(imageData, 0, 0)
 }
 
 async function drawPhotoFrames(
