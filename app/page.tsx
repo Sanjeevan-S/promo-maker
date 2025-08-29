@@ -118,8 +118,15 @@ export default function PromoMaker() {
       if (!response.ok) throw new Error("Failed to generate promotional image")
 
       const data = await response.json()
+      
+      // Validate that we got a valid image URL
+      if (!data.imageUrl || typeof data.imageUrl !== 'string') {
+        throw new Error("Invalid image data received")
+      }
+      
       return data.imageUrl
     } catch (error) {
+      console.error("Error generating promotional image:", error)
       throw new Error("Failed to generate promotional image")
     }
   }
@@ -172,6 +179,14 @@ export default function PromoMaker() {
         
         // Generate promotional image using the prompt
         const promotionalImage = await generatePromotionalImage(prompt, ratio)
+        
+        console.log(`Generated image for ${ratio}:`, promotionalImage?.substring(0, 100) + '...')
+        
+        // Validate the generated image
+        if (!promotionalImage || !promotionalImage.startsWith('data:image/')) {
+          console.error(`Invalid image data for ${ratio}:`, promotionalImage)
+          throw new Error(`Failed to generate valid image for ${ratio}`)
+        }
 
         newCompositions[ratio] = {
           background: promotionalImage, // Use the generated promotional image as background
@@ -203,13 +218,21 @@ export default function PromoMaker() {
       // Generate a new comprehensive prompt for this ratio
       const prompt = await generatePrompt(ratio)
       
-      // Generate new promotional image using the prompt
-      const promotionalImage = await generatePromotionalImage(prompt, ratio)
+              // Generate new promotional image using the prompt
+        const promotionalImage = await generatePromotionalImage(prompt, ratio)
+        
+        console.log(`Rerolled image for ${ratio}:`, promotionalImage?.substring(0, 100) + '...')
+        
+        // Validate the generated image
+        if (!promotionalImage || !promotionalImage.startsWith('data:image/')) {
+          console.error(`Invalid image data for ${ratio}:`, promotionalImage)
+          throw new Error(`Failed to generate valid image for ${ratio}`)
+        }
 
-      setCompositions((prev) => ({
-        ...prev,
-        [ratio]: prev[ratio] ? { ...prev[ratio]!, background: promotionalImage } : null,
-      }))
+        setCompositions((prev) => ({
+          ...prev,
+          [ratio]: prev[ratio] ? { ...prev[ratio]!, background: promotionalImage } : null,
+        }))
 
       toast({
         title: "Background updated",

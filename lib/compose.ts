@@ -17,9 +17,9 @@ export interface CompositionData {
 export type AspectRatio = "1:1" | "4:5" | "9:16"
 
 const CANVAS_SIZES = {
-  "1:1": { width: 1080, height: 1080 },
-  "4:5": { width: 1080, height: 1350 },
-  "9:16": { width: 1080, height: 1920 },
+  "1:1": { width: 800, height: 800 },
+  "4:5": { width: 800, height: 1000 },
+  "9:16": { width: 800, height: 1422 },
 }
 
 export async function composeToCanvas(
@@ -27,32 +27,80 @@ export async function composeToCanvas(
   ratio: AspectRatio,
   data: CompositionData,
 ): Promise<void> {
+  console.log(`Starting composition for ${ratio}:`, {
+    canvasWidth: canvas.width,
+    canvasHeight: canvas.height,
+    hasBackground: !!data.background,
+    backgroundType: data.background?.substring(0, 50),
+    hasPhotos: data.photos.length > 0,
+    hasLogo: !!data.logo,
+    hasCopy: !!data.copy
+  })
+  
   const ctx = canvas.getContext("2d")!
-  const size = CANVAS_SIZES[ratio]
+  
+  // Use display size instead of large internal size to avoid scaling issues
+  const displaySize = {
+    "1:1": { width: 400, height: 400 },
+    "4:5": { width: 400, height: 500 },
+    "9:16": { width: 400, height: 711 },
+  }[ratio]
+  
   const layout = data.template.layout[ratio]
 
-  canvas.width = size.width
-  canvas.height = size.height
+  canvas.width = displaySize.width
+  canvas.height = displaySize.height
+  
+  console.log(`Canvas size set to display size:`, displaySize)
 
   // Clear canvas
-  ctx.clearRect(0, 0, size.width, size.height)
+  ctx.clearRect(0, 0, displaySize.width, displaySize.height)
 
   // Draw background
-  await drawBackground(ctx, data.background, size.width, size.height)
+  console.log(`Drawing background...`)
+  try {
+    await drawBackground(ctx, data.background, displaySize.width, displaySize.height)
+    console.log(`Background drawn successfully`)
+  } catch (error) {
+    console.error("Failed to draw background, using fallback:", error)
+    // Draw a fallback colored background
+    ctx.fillStyle = data.themeColor
+    ctx.fillRect(0, 0, displaySize.width, displaySize.height)
+  }
 
   // Add subtle noise overlay
-  addNoiseOverlay(ctx, size.width, size.height)
+  addNoiseOverlay(ctx, displaySize.width, displaySize.height)
 
   // Draw photo frames
-  await drawPhotoFrames(ctx, data.photos, layout.frames, size.width, size.height, data.themeColor)
+  console.log(`Drawing photo frames...`)
+  try {
+    await drawPhotoFrames(ctx, data.photos, layout.frames, displaySize.width, displaySize.height, data.themeColor)
+    console.log(`Photo frames drawn successfully`)
+  } catch (error) {
+    console.error("Failed to draw photo frames:", error)
+  }
 
   // Draw logo
   if (data.logo) {
-    await drawLogo(ctx, data.logo, layout.logoPos, size.width, size.height)
+    console.log(`Drawing logo...`)
+    try {
+      await drawLogo(ctx, data.logo, layout.logoPos, displaySize.width, displaySize.height)
+      console.log(`Logo drawn successfully`)
+    } catch (error) {
+      console.error("Failed to draw logo:", error)
+    }
   }
 
   // Draw text
-  await drawText(ctx, data.copy, layout.textZone, size.width, size.height, canvas, data.template)
+  console.log(`Drawing text...`)
+  try {
+    await drawText(ctx, data.copy, layout.textZone, displaySize.width, displaySize.height, canvas, data.template)
+    console.log(`Text drawn successfully`)
+  } catch (error) {
+    console.error("Failed to draw text:", error)
+  }
+  
+  console.log(`Composition completed for ${ratio}`)
 }
 
 async function drawBackground(
@@ -61,9 +109,34 @@ async function drawBackground(
   width: number,
   height: number,
 ): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    console.log(`Drawing background:`, {
+      url: backgroundUrl?.substring(0, 100),
+      width,
+      height
+    })
+    
+    if (!backgroundUrl || backgroundUrl.trim() === '') {
+      reject(new Error("Background URL is empty or invalid"))
+      return
+    }
+    
     const img = new Image()
+    
+    // Add timeout for image loading
+    const timeout = setTimeout(() => {
+      reject(new Error("Image loading timed out"))
+    }, 30000) // 30 second timeout
+    
     img.onload = () => {
+      clearTimeout(timeout)
+      console.log(`Background image loaded:`, {
+        naturalWidth: img.naturalWidth,
+        naturalHeight: img.naturalHeight,
+        width: img.width,
+        height: img.height
+      })
+      
       // Draw as cover (maintain aspect ratio, fill canvas)
       const imgRatio = img.width / img.height
       const canvasRatio = width / height
@@ -83,9 +156,42 @@ async function drawBackground(
         offsetY = (height - drawHeight) / 2
       }
 
-      ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight)
-      resolve()
+      console.log(`Drawing background with dimensions:`, {
+        drawWidth,
+        drawHeight,
+        offsetX,
+        offsetY
+      })
+
+      try {
+        ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight)
+        console.log("Background image drawn successfully to canvas")
+        
+        // Verify the canvas has content
+        const imageData = ctx.getImageData(0, 0, width, height)
+        const hasContent = imageData.data.some((pixel, index) => {
+          if (index % 4 === 3) { // Alpha channel
+            return pixel > 0
+          }
+          return false
+        })
+        console.log("Canvas content verification:", { hasContent, imageDataSize: imageData.data.length })
+        
+        resolve()
+      } catch (drawError) {
+        console.error("Error drawing image to canvas:", drawError)
+        reject(drawError)
+      }
     }
+    
+    img.onerror = (error) => {
+      clearTimeout(timeout)
+      console.error("Failed to load background image:", error)
+      reject(new Error("Failed to load background image"))
+    }
+    
+    // Set crossOrigin to anonymous to handle CORS
+    img.crossOrigin = "anonymous"
     img.src = backgroundUrl
   })
 }
@@ -205,40 +311,51 @@ async function drawPhoto(
   height: number,
   radius: number,
 ): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const img = new Image()
+    
     img.onload = () => {
-      ctx.save()
+      try {
+        ctx.save()
 
-      // Create clipping path
-      ctx.beginPath()
-      drawRoundedRect(ctx, x, y, width, height, radius)
-      ctx.clip()
+        // Create clipping path
+        ctx.beginPath()
+        drawRoundedRect(ctx, x, y, width, height, radius)
+        ctx.clip()
 
-      // Draw image (contain fit)
-      const imgRatio = img.width / img.height
-      const frameRatio = width / height
+        // Draw image (contain fit)
+        const imgRatio = img.width / img.height
+        const frameRatio = width / height
 
-      let drawWidth,
-        drawHeight,
-        offsetX = 0,
-        offsetY = 0
+        let drawWidth,
+          drawHeight,
+          offsetX = 0,
+          offsetY = 0
 
-      if (imgRatio > frameRatio) {
-        drawHeight = height
-        drawWidth = height * imgRatio
-        offsetX = (width - drawWidth) / 2
-      } else {
-        drawWidth = width
-        drawHeight = width / imgRatio
-        offsetY = (height - drawHeight) / 2
+        if (imgRatio > frameRatio) {
+          drawHeight = height
+          drawWidth = height * imgRatio
+          offsetX = (width - drawWidth) / 2
+        } else {
+          drawWidth = width
+          drawHeight = width / imgRatio
+          offsetY = (height - drawHeight) / 2
+        }
+
+        ctx.drawImage(img, x + offsetX, y + offsetY, drawWidth, drawHeight)
+
+        ctx.restore()
+        resolve()
+      } catch (error) {
+        reject(error)
       }
-
-      ctx.drawImage(img, x + offsetX, y + offsetY, drawWidth, drawHeight)
-
-      ctx.restore()
-      resolve()
     }
+    
+    img.onerror = (error) => {
+      reject(new Error("Failed to load photo"))
+    }
+    
+    img.crossOrigin = "anonymous"
     img.src = photoUrl
   })
 }
@@ -250,48 +367,59 @@ async function drawLogo(
   width: number,
   height: number,
 ): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const img = new Image()
+    
     img.onload = () => {
-      const maxSize = Math.min(width * 0.18, 120)
-      const padding = 32
+      try {
+        const maxSize = Math.min(width * 0.18, 120)
+        const padding = 32
 
-      // Calculate logo size (maintain aspect ratio)
-      const logoRatio = img.width / img.height
-      let logoWidth, logoHeight
+        // Calculate logo size (maintain aspect ratio)
+        const logoRatio = img.width / img.height
+        let logoWidth, logoHeight
 
-      if (logoRatio > 1) {
-        logoWidth = maxSize
-        logoHeight = maxSize / logoRatio
-      } else {
-        logoHeight = maxSize
-        logoWidth = maxSize * logoRatio
+        if (logoRatio > 1) {
+          logoWidth = maxSize
+          logoHeight = maxSize / logoRatio
+        } else {
+          logoHeight = maxSize
+          logoWidth = maxSize * logoRatio
+        }
+
+        // Calculate position
+        let x, y
+        switch (position) {
+          case "tl":
+            x = padding
+            y = padding
+            break
+          case "tr":
+            x = width - logoWidth - padding
+            y = padding
+            break
+          case "bl":
+            x = padding
+            y = height - logoHeight - padding
+            break
+          case "br":
+            x = width - logoWidth - padding
+            y = height - logoHeight - padding
+            break
+        }
+
+        ctx.drawImage(img, x, y, logoWidth, logoHeight)
+        resolve()
+      } catch (error) {
+        reject(error)
       }
-
-      // Calculate position
-      let x, y
-      switch (position) {
-        case "tl":
-          x = padding
-          y = padding
-          break
-        case "tr":
-          x = width - logoWidth - padding
-          y = padding
-          break
-        case "bl":
-          x = padding
-          y = height - logoHeight - padding
-          break
-        case "br":
-          x = width - logoWidth - padding
-          y = height - logoHeight - padding
-          break
-      }
-
-      ctx.drawImage(img, x, y, logoWidth, logoHeight)
-      resolve()
     }
+    
+    img.onerror = (error) => {
+      reject(new Error("Failed to load logo"))
+    }
+    
+    img.crossOrigin = "anonymous"
     img.src = logoUrl
   })
 }
